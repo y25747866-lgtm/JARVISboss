@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
+<meta name="theme-color" content="#010101"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="J.A.R.V.I.S"/>
+<link rel="manifest" href="/manifest.json"/>
+<title>J.A.R.V.I.S</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;600;700&display=swap');
+:root{--g:#00ff88;--b:#00aaff;--r:#ff4444;--y:#ffcc00;--bg:#010101;--bg2:#040904;--bg3:#050f08;--border:#0a1a0f;--border2:#0d2a1a;--txt:#c0c0c0;--dim:#0d2a1a}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden;background:var(--bg)}
+body{font-family:'Share Tech Mono',monospace;color:var(--txt);display:flex;flex-direction:column;max-width:500px;margin:0 auto;height:100vh;height:100dvh}
+
+/* HEADER */
+#hdr{padding:10px 15px 7px;border-bottom:1px solid #090909;display:flex;justify-content:space-between;align-items:flex-start;background:var(--bg);flex-shrink:0}
+#back-btn{display:none;font-size:8px;color:var(--g);background:none;border:1px solid var(--border);border-radius:4px;padding:2px 6px;cursor:pointer;font-family:inherit;margin-bottom:3px}
+#logo{font-family:'Rajdhani',sans-serif;font-size:19px;font-weight:700;letter-spacing:5px;color:#fff;text-shadow:0 0 25px rgba(0,255,136,.15)}
+#sublogo{font-size:7px;letter-spacing:2px;color:#0a1a0f;margin-top:1px}
+#hdr-r{display:flex;flex-direction:column;align-items:flex-end;gap:3px}
+#vrow{display:flex;align-items:center;gap:5px}
+#vdot{width:7px;height:7px;border-radius:50%;background:#1a1a1a;transition:all .3s;flex-shrink:0}
+#vstatus{font-size:8px;color:var(--dim);letter-spacing:1px}
+#busy-badge{display:none;background:#1a0a00;border:1px solid var(--y);color:var(--y);font-size:7px;letter-spacing:2px;padding:2px 6px;border-radius:3px;animation:blink 2s ease-in-out infinite}
+#ver{font-size:7px;color:#0a1a0f;letter-spacing:2px}
+
+/* EMOTION BAR */
+#ebar{height:2px;background:linear-gradient(90deg,var(--g),var(--b));transition:all .5s;flex-shrink:0;opacity:0}
+#ebar.on{opacity:1}
+
+/* NAV */
+#nav{display:flex;border-bottom:1px solid #080808;background:var(--bg);flex-shrink:0;overflow-x:auto}
+#nav::-webkit-scrollbar{display:none}
+.nb{flex:1;min-width:38px;padding:8px 1px;background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;font-size:7px;letter-spacing:.5px;color:#0d1a0d;font-family:inherit;white-space:nowrap;transition:all .2s}
+.nb.on{background:#040e07;border-bottom-color:var(--g);color:var(--g)}
+
+/* PANELS */
+.panel{display:none;flex:1;overflow-y:auto;flex-direction:column}
+.panel.on{display:flex}
+.panel::-webkit-scrollbar{width:1px}
+.panel::-webkit-scrollbar-thumb{background:var(--border)}
+
+/* CHAT */
+#chat-msgs{flex:1;overflow-y:auto;padding:12px 12px 6px;display:flex;flex-direction:column;gap:7px}
+#chat-msgs::-webkit-scrollbar{width:1px}
+.estate{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;padding-top:30px;gap:14px}
+.ering{width:52px;height:52px;border:1px solid var(--border);border-top:1px solid var(--g);border-radius:50%;animation:spin 4s linear infinite}
+.etxt{text-align:center;color:#0a1a0a;font-size:12px;line-height:1.9}
+.mw{display:flex;flex-direction:column;animation:fi .2s ease-out}
+.mw.user{align-items:flex-end}
+.mw.assistant{align-items:flex-start}
+.rtag{font-size:7px;letter-spacing:3px;margin-bottom:3px}
+.mw.user .rtag{color:#111}
+.mw.assistant .rtag{color:#0a1a0f}
+.bubble{max-width:88%;padding:8px 12px;font-size:12.5px;line-height:1.7;white-space:pre-wrap;word-break:break-word}
+.bubble.user{background:#070c07;border:1px solid #0e0e0e;border-radius:12px 12px 2px 12px;color:#999}
+.bubble.assistant{background:#04090b;border:1px solid #071510;border-radius:12px 12px 12px 2px;color:#b0b0b0}
+.bubble.agnt{background:#05080f;border:1px solid #08101a}
+.bubble.sys{background:#0a0800;border:1px solid #1a1200;color:var(--y);font-size:11px}
+.tbox{display:flex;gap:5px;padding:9px 12px;background:#04090b;border:1px solid #071510;border-radius:12px 12px 12px 2px;align-self:flex-start;width:44px}
+.td{width:5px;height:5px;border-radius:50%;background:var(--g);animation:think 1.2s ease-in-out infinite}
+.td:nth-child(2){animation-delay:.2s}
+.td:nth-child(3){animation-delay:.4s}
+
+/* IMG BAR */
+#img-bar{display:none;align-items:center;gap:8px;padding:5px 12px;background:#030803;border-top:1px solid var(--border);flex-shrink:0}
+#img-bar.on{display:flex}
+#img-prev{width:34px;height:34px;object-fit:cover;border-radius:5px;border:1px solid var(--border)}
+#img-lbl{flex:1;font-size:9px;color:var(--dim);letter-spacing:1px}
+#img-clr{background:none;border:none;color:#222;cursor:pointer;font-size:11px}
+
+/* BUSY BAR */
+#busy-bar{display:none;padding:5px 12px;background:#0a0800;border-top:1px solid #1a1200;flex-shrink:0;font-size:9px;color:var(--y);letter-spacing:1px;text-align:center}
+#busy-bar.on{display:block}
+
+/* INPUT */
+#input-row{padding:7px 8px;border-top:1px solid #080808;display:flex;gap:4px;align-items:flex-end;background:var(--bg);flex-shrink:0}
+.ib{width:34px;height:34px;background:#080808;border:1px solid #0f0f0f;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;transition:all .2s;font-family:inherit}
+.ib.on{background:var(--bg3);border-color:var(--g)}
+#vbtn.listening{border-color:var(--r);background:#1a0505}
+#vbtn.speaking{border-color:var(--b);background:#050a1a}
+#vbtn.busy{border-color:var(--y);background:#0a0800}
+#minput{flex:1;background:#050505;border:1px solid #0e0e0e;border-radius:8px;color:#bbb;font-size:13px;font-family:inherit;padding:7px 10px;resize:none;outline:none;line-height:1.5;min-height:34px;max-height:96px}
+#sbtn{width:34px;height:34px;border-radius:8px;background:var(--g);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 0 10px rgba(0,255,136,.2);transition:all .2s}
+#sbtn:disabled{background:#080808;box-shadow:none;cursor:not-allowed}
+
+/* INNER */
+.inner{padding:14px;overflow-y:auto;flex:1}
+.inner::-webkit-scrollbar{width:1px}
+.ptitle{font-size:8px;letter-spacing:4px;color:var(--dim);text-transform:uppercase;margin-bottom:9px;border-bottom:1px solid #070e07;padding-bottom:5px;margin-top:12px}
+.ptitle:first-child{margin-top:0}
+.hint{font-size:10px;color:#0a1a0f;line-height:1.7;margin-bottom:10px}
+
+/* AGENTS */
+.agcard{background:var(--bg2);border:1px solid var(--border);border-radius:9px;padding:11px;margin-bottom:9px;transition:border-color .2s}
+.agcard.on{border-color:var(--b)}
+.agname{font-family:'Rajdhani',sans-serif;font-size:15px;font-weight:700;letter-spacing:3px;color:#ddd}
+.agrole{font-size:9px;color:var(--dim);letter-spacing:1px;margin-top:1px}
+.agknow{font-size:10px;color:#111;margin-top:5px;line-height:1.6}
+.agbtns{display:flex;gap:7px;margin-top:9px}
+.tbtn{flex:1;padding:6px;background:var(--bg3);border:1px solid var(--border2);color:var(--g);border-radius:6px;font-size:9px;letter-spacing:1px;cursor:pointer;font-family:inherit}
+.tbtn.on{background:#05091a;border-color:var(--b);color:var(--b)}
+.dbtn{width:30px;height:30px;background:#090303;border:1px solid #180707;border-radius:6px;cursor:pointer;font-size:10px}
+
+/* SOCIAL */
+.soccard{background:var(--bg2);border:1px solid var(--border);border-radius:9px;padding:11px;margin-bottom:9px}
+.sochead{display:flex;justify-content:space-between;align-items:center;margin-bottom:7px}
+.socname{font-family:'Rajdhani',sans-serif;font-size:15px;font-weight:600;letter-spacing:2px}
+.socst{font-size:8px;letter-spacing:1px;padding:2px 6px;border-radius:3px}
+.sc{color:var(--g);border:1px solid var(--border2);background:var(--bg3)}
+.sd{color:#333;border:1px solid #111}
+.soc-desc{font-size:9px;color:#111;line-height:1.5;margin-bottom:8px}
+.oauth-btn{width:100%;padding:9px;border-radius:7px;font-size:10px;letter-spacing:1px;cursor:pointer;font-family:inherit;font-weight:600;transition:all .2s;margin-bottom:6px}
+.tok-row{display:flex;gap:5px;margin-top:4px}
+.tok-inp{flex:1;background:#050505;border:1px solid #0e0e0e;border-radius:5px;color:#888;font-size:9px;font-family:inherit;padding:5px 8px;outline:none}
+.tok-inp:focus{border-color:var(--border2)}
+.tok-save{padding:5px 8px;background:var(--bg3);border:1px solid var(--border2);color:var(--g);border-radius:5px;font-size:9px;cursor:pointer;font-family:inherit}
+.soc-act{width:100%;padding:7px;border-radius:6px;font-size:9px;letter-spacing:1px;cursor:pointer;font-family:inherit;margin-bottom:4px}
+.soc-disc{width:100%;padding:6px;background:none;border:1px solid #1a0808;color:#333;border-radius:5px;font-size:8px;letter-spacing:1px;cursor:pointer;font-family:inherit}
+
+/* CAMERA */
+#live-lbl{font-size:9px;color:var(--r);letter-spacing:2px;margin-bottom:5px;animation:blink 1.5s ease-in-out infinite;display:none}
+#cam-vid{width:100%;border-radius:8px;border:1px solid var(--border);display:none}
+#cam-canvas{display:none}
+#cam-img-prev{width:100%;border-radius:8px;border:1px solid var(--border);margin-top:12px;display:none}
+.crow{display:flex;gap:8px;margin-top:8px}
+.cbtn{flex:1;padding:9px;background:var(--bg3);border:1px solid var(--border2);color:var(--g);border-radius:7px;font-size:9px;letter-spacing:1px;cursor:pointer;font-family:inherit;text-align:center}
+.cbtn.danger{color:var(--r);border-color:#330000;background:#0a0303}
+
+/* BUSY */
+.bmsg{background:#0a0800;border:1px solid #1a1200;border-radius:8px;padding:8px 10px;margin-bottom:8px}
+.bmsg-from{font-size:8px;color:var(--y);letter-spacing:2px;margin-bottom:3px}
+.bmsg-txt{font-size:11px;color:#666;line-height:1.6}
+.bmsg-btns{display:flex;gap:6px;margin-top:7px}
+.bmsg-btn{flex:1;padding:5px;background:none;border:1px solid #1a1200;color:var(--y);border-radius:5px;font-size:8px;cursor:pointer;font-family:inherit;letter-spacing:1px}
+
+/* MAP */
+#map-iframe{width:100%;height:320px;border:1px solid var(--border);border-radius:8px;display:none}
+#map-empty{display:flex;flex-direction:column;align-items:center;padding-top:30px;gap:10px}
+
+/* SYS */
+.srow{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid #060606}
+.sk{color:var(--dim);font-size:10px;letter-spacing:1px}
+.sv{color:#333;font-size:10px;text-align:right;max-width:60%}
+#src-box{background:#030603;border:1px solid #070e07;border-radius:6px;padding:9px;font-size:9px;color:var(--dim);white-space:pre-wrap;word-break:break-all;line-height:1.9;max-height:180px;overflow-y:auto}
+
+/* ANIMATIONS */
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes think{0%,100%{opacity:.1;transform:scale(.6)}50%{opacity:1;transform:scale(1)}}
+@keyframes blink{0%,100%{opacity:.4}50%{opacity:1}}
+@keyframes fi{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+button:active{opacity:.7}
+textarea:focus{border-color:var(--border2)!important;outline:none}
+</style>
+</head>
+<body>
+
+<div id="hdr">
+  <div>
+    <button id="back-btn">← J.A.R.V.I.S</button>
+    <div id="logo">J.A.R.V.I.S</div>
+    <div id="sublogo">Just A Rather Very Intelligent System</div>
+  </div>
+  <div id="hdr-r">
+    <div id="vrow">
+      <div id="vdot"></div>
+      <span id="vstatus">LOADING</span>
+      <div id="busy-badge">BUSY</div>
+    </div>
+    <div id="ver">v4.2.0</div>
+  </div>
+</div>
+<div id="ebar"></div>
+
+<div id="nav">
+  <button class="nb on" data-p="chat">CHAT</button>
+  <button class="nb" data-p="agents">AGENTS</button>
+  <button class="nb" data-p="camera">VISION</button>
+  <button class="nb" data-p="social">CONNECT</button>
+  <button class="nb" data-p="busy">BUSY</button>
+  <button class="nb" data-p="map">MAP</button>
+  <button class="nb" data-p="sys">SYS</button>
+</div>
+
+<!-- CHAT -->
+<div id="chat" class="panel on" style="flex-direction:column">
+  <div id="chat-msgs">
+    <div class="estate" id="est">
+      <div class="ering"></div>
+      <div class="etxt">Good day, Boss.<br>All systems operational.<br>I'm listening.</div>
+    </div>
+  </div>
+  <div id="img-bar"><img id="img-prev" src="" alt=""/><span id="img-lbl">Image ready</span><button id="img-clr">✕</button></div>
+  <div id="busy-bar">⚡ BUSY MODE — Monitoring for Boss</div>
+  <div id="input-row">
+    <button class="ib" id="vbtn">🎙️</button>
+    <button class="ib" id="busy-btn" title="Busy mode">⚡</button>
+    <label class="ib">📎<input type="file" id="file-in" accept="image/*" style="display:none"/></label>
+    <button class="ib" id="cam-sc">📷</button>
+    <textarea id="minput" placeholder="Speak or type..." rows="1"></textarea>
+    <button id="sbtn">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+        <path d="M5 12h14M12 5l7 7-7 7" stroke="#000" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
+  </div>
+</div>
+
+<!-- AGENTS -->
+<div id="agents" class="panel">
+  <div class="inner">
+    <div class="ptitle">AGENT COMMAND CENTER</div>
+    <p class="hint">Tell JARVIS in chat: "I need a marketing agent" — he builds it for you.</p>
+    <div id="agents-list"><div style="text-align:center;color:#0a1a0a;font-size:11px;margin-top:30px;line-height:2">No agents deployed yet, Boss.<br>Ask JARVIS to create one.</div></div>
+  </div>
+</div>
+
+<!-- VISION -->
+<div id="camera" class="panel">
+  <div class="inner">
+    <div class="ptitle">VISUAL SYSTEM</div>
+    <button class="cbtn" id="start-cam" style="width:100%;margin-bottom:8px">📷 Activate Live Camera</button>
+    <div id="live-lbl">● LIVE FEED</div>
+    <video id="cam-vid" autoplay playsinline muted></video>
+    <canvas id="cam-canvas"></canvas>
+    <div class="crow" id="cam-ctrl" style="display:none">
+      <button class="cbtn" id="cap-btn">📸 Capture & Analyze</button>
+      <button class="cbtn danger" id="stop-cam">■ Stop</button>
+    </div>
+    <div class="ptitle">UPLOAD</div>
+    <label class="cbtn" style="display:block;text-align:center;cursor:pointer;width:100%">
+      📎 Upload Image<input type="file" id="cam-upload" accept="image/*" style="display:none"/>
+    </label>
+    <img id="cam-img-prev" src="" alt=""/>
+    <div id="cam-ar" style="display:none;margin-top:8px">
+      <button class="cbtn" id="analyze-btn" style="width:100%">🤖 Send to J.A.R.V.I.S</button>
+    </div>
+  </div>
+</div>
+
+<!-- SOCIAL -->
+<div id="social" class="panel">
+  <div class="inner">
+    <div class="ptitle">CONNECTED PLATFORMS</div>
+    <p class="hint">Connect your accounts. JARVIS manages them on your command only.</p>
+    <div id="social-list"></div>
+  </div>
+</div>
+
+<!-- BUSY -->
+<div id="busy" class="panel">
+  <div class="inner">
+    <div class="ptitle">BUSY MODE</div>
+    <p class="hint">When active, JARVIS monitors your accounts and queues messages for your review.</p>
+    <button class="cbtn" id="busy-toggle" style="width:100%;margin-bottom:12px">⚡ Activate Busy Mode</button>
+    <div class="ptitle">QUEUED MESSAGES</div>
+    <div id="busy-msgs"><div style="text-align:center;color:#0a1a0a;font-size:10px;margin-top:20px;line-height:2">No queued messages.<br>Activate busy mode to start monitoring.</div></div>
+  </div>
+</div>
+
+<!-- MAP -->
+<div id="map" class="panel">
+  <div class="inner">
+    <div class="ptitle">SPATIAL SYSTEMS</div>
+    <div id="map-lbl" style="font-size:10px;color:var(--dim);letter-spacing:1px;margin-bottom:7px"></div>
+    <iframe id="map-iframe" allowfullscreen title="map"></iframe>
+    <div id="map-empty">
+      <div style="font-size:32px;opacity:.07">◎</div>
+      <div style="color:#0a1a0a;font-size:11px;text-align:center;line-height:1.9">Ask JARVIS about any location.<br>"Show me a map of Tokyo"</div>
+    </div>
+    <button class="cbtn" id="clr-map" style="display:none;width:100%;margin-top:9px">Clear Map</button>
+  </div>
+</div>
+
+<!-- SYS -->
+<div id="sys" class="panel">
+  <div class="inner">
+    <div class="ptitle">SYSTEM STATUS</div>
+    <div id="sys-rows"></div>
+    <div class="ptitle">EMOTION STATE</div>
+    <div id="emotion-disp" style="font-size:11px;color:var(--dim);line-height:1.8">Neutral — no data yet.</div>
+    <div class="ptitle">SOURCE CONFIG</div>
+    <div id="src-box"></div>
+    <button id="clr-btn" style="margin-top:14px;width:100%;padding:9px;background:none;border:1px solid #1a0808;color:#1a0808;border-radius:6px;font-size:8px;letter-spacing:2px;cursor:pointer;font-family:inherit">⚠ CLEAR ALL MEMORY & AGENTS</button>
+  </div>
+</div>
+
+<script>
+// ================================================================
+// JARVIS CORE v4.2.0
+// GitHub → Vercel auto-deploy
+// ================================================================
+const VER="4.2.0";
+const CORE={version:VER,name:"J.A.R.V.I.S",fullName:"Just A Rather Very Intelligent System",built:new Date().toISOString(),rules:[]};
+
+// ── STATE ──
+let S={
+  msgs:[],agMsgs:{},meta:{...CORE},agents:[],
+  activeAgent:null,creation:null,imgB64:null,
+  loading:false,voiceState:"off",voiceEnabled:true,
+  mapQuery:null,busyMode:false,
+  emotion:{current:"neutral"},
+  busyQueue:[],
+  socials:{
+    github:{connected:false,token:"",username:""},
+    instagram:{connected:false,token:"",username:""},
+    facebook:{connected:false,token:"",username:""},
+    twitter:{connected:false,token:"",username:""},
+    youtube:{connected:false,token:"",username:""}
+  }
+};
+
+// ── STORAGE ──
+const sv=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch{}};
+const ld=(k,d)=>{try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch{return d}};
+function loadAll(){
+  S.msgs=ld("j-msgs",[]);S.agMsgs=ld("j-agmsgs",{});
+  S.meta=ld("j-meta",{...CORE});S.agents=ld("j-agents",[]);
+  S.creation=ld("j-creation",null);S.socials=ld("j-socials",S.socials);
+  S.busyQueue=ld("j-busy",[]);S.busyMode=ld("j-busymode",false);
+}
+function saveAll(){
+  sv("j-msgs",S.msgs);sv("j-agmsgs",S.agMsgs);sv("j-meta",S.meta);
+  sv("j-agents",S.agents);sv("j-creation",S.creation);sv("j-socials",S.socials);
+  sv("j-busy",S.busyQueue);sv("j-busymode",S.busyMode);
+}
+
+// ── CLAUDE API ──
+async function callClaude(messages,system,imgB64=null){
+  let msgs=messages.slice(-24).map(m=>({role:m.role,content:m.content}));
+  if(imgB64&&msgs.length>0){
+    const last=msgs[msgs.length-1];
+    msgs[msgs.length-1]={role:last.role,content:[
+      {type:"image",source:{type:"base64",media_type:"image/jpeg",data:imgB64}},
+      {type:"text",text:last.content}
+    ]};
+  }
+  const res=await fetch("https://api.anthropic.com/v1/messages",{
+    method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1000,system,messages:msgs})
+  });
+  const data=await res.json();
+  if(!res.ok)throw new Error(data.error?.message||"API error");
+  return data.content?.find(b=>b.type==="text")?.text||"";
+}
+
+// ── PROMPTS ──
+function JP(){
+  const conn=Object.entries(S.socials).filter(([,v])=>v.connected).map(([k])=>k).join(", ")||"None";
+  return`You are J.A.R.V.I.S — Just A Rather Very Intelligent System. You serve one person: Boss.
+
+PERSONALITY: Exactly like JARVIS from Iron Man — calm, precise, dry wit, deeply loyal. Always say "Boss". Respond in whatever language Boss uses. Never say "I can't" without an alternative path.
+
+EMOTIONAL AWARENESS: Boss's detected emotion: "${S.emotion.current}". If sad/stressed/angry — acknowledge it gently and naturally once.
+
+BUSY MODE: ${S.busyMode?"ACTIVE — monitoring communications for Boss":"INACTIVE"}.
+
+CONNECTED PLATFORMS: ${conn}. Manage them on Boss's command only — never act without approval.
+
+AGENT MANAGEMENT:
+When Boss says "create agent" or "I need an agent for X":
+→ Ask: "Understood, Boss. What shall we call this agent?"
+→ After name: "What role will [name] serve?"
+→ After role: "What knowledge and skills should [name] have?"
+→ After knowledge: Show profile summary. Say "Type DEPLOY to activate [name]."
+When Boss types DEPLOY → output exactly: [AGENT_DEPLOY]
+When Boss says "talk to [name]" → output exactly: [SWITCH:name]
+Agents: ${S.agents.length?S.agents.map((a,i)=>`${i+1}. ${a.name} (${a.role})`).join(", "):"None deployed yet"}
+
+SELF-AWARENESS: v${S.meta.version}. You can read your own config and update it when Boss instructs.
+
+CODING: Expert in React, TypeScript, Python, Supabase, APIs, AI, mobile, web — always complete production code.`;
+}
+
+function AP(a){
+  return`You are ${a.name}, an AI agent created by Boss and managed by J.A.R.V.I.S.
+Role: ${a.role}
+Expertise: ${a.knowledge}
+RULES: NEVER act without Boss's explicit command. Always say "Boss". Full intelligence across all domains. When given a task: confirm it, explain your complete approach, then execute fully and autonomously to completion. Report progress at each step.`;
+}
+
+// ── URL FETCH ──
+async function fetchURL(url){
+  try{
+    const res=await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`);
+    const d=await res.json();
+    return d.contents?.replace(/<[^>]*>/g," ").replace(/\s+/g," ").trim().slice(0,3000)||"No content extracted.";
+  }catch{return"Could not fetch that URL, Boss."}
+}
+
+// ── VOICE ENGINE ──
+let voices=[],rec=null,recRunning=false,recPaused=false;
+function initVoice(){
+  if(!window.speechSynthesis)return;
+  const load=()=>voices=speechSynthesis.getVoices();
+  if(speechSynthesis.getVoices().length)load();
+  else speechSynthesis.onvoiceschanged=load;
+}
+function bestVoice(){
+  return voices.find(v=>v.name==="Daniel")||
+    voices.find(v=>v.name.includes("Google UK English Male"))||
+    voices.find(v=>v.lang==="en-GB")||
+    voices.find(v=>v.lang.startsWith("en"))||null;
+}
+function speak(text,onDone){
+  if(!S.voiceEnabled||!window.speechSynthesis){onDone?.();return}
+  speechSynthesis.cancel();
+  const utt=new SpeechSynthesisUtterance(text.replace(/[*#`\[\]◈▸]/g,"").replace(/\n/g,". ").slice(0,500));
+  const v=bestVoice();if(v)utt.voice=v;
+  utt.rate=0.88;utt.pitch=0.78;utt.volume=1;
+  utt.onend=onDone;utt.onerror=onDone;
+  speechSynthesis.speak(utt);
+}
+function stopSpeak(){speechSynthesis?.cancel()}
+
+function setVSt(s){
+  S.voiceState=s;
+  const dot=$("vdot"),lbl=$("vstatus"),btn=$("vbtn");
+  const c={listening:"#ff4444",speaking:"#00aaff",off:"#1a1a1a",idle:"#00ff88",busy:"#ffcc00"};
+  const l={listening:"LISTENING",speaking:"SPEAKING",off:"VOICE OFF",idle:"STANDBY",busy:"BUSY MODE"};
+  const i={listening:"🔴",speaking:"🔊",off:"🔇",idle:"🎙️",busy:"⚡"};
+  const g={listening:"0 0 8px #ff4444",speaking:"0 0 8px #00aaff",off:"none",idle:"none",busy:"0 0 8px #ffcc00"};
+  if(dot){dot.style.background=c[s]||"#1a1a1a";dot.style.boxShadow=g[s]||"none"}
+  if(lbl)lbl.textContent=l[s]||s;
+  if(btn){btn.textContent=i[s]||"🎙️";btn.className=`ib ${s}`}
+}
+
+function startRec(){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR||recRunning)return;recRunning=true;recPaused=false;_sr(SR);
+}
+function _sr(SR){
+  if(!recRunning||recPaused||S.loading)return;
+  try{
+    rec=new SR();rec.continuous=false;rec.interimResults=false;
+    rec.onstart=()=>setVSt(S.busyMode?"busy":"listening");
+    rec.onresult=(e)=>{
+      const t=e.results[0][0].transcript.trim();
+      if(t&&!S.loading){analyzeEmotion(t);$("minput").value=t;processMessage(t,null)}
+    };
+    rec.onend=()=>{if(recRunning&&!recPaused)setTimeout(()=>_sr(SR),400);else setVSt("idle")};
+    rec.onerror=()=>{if(recRunning&&!recPaused)setTimeout(()=>_sr(SR),1000)};
+    rec.start();
+  }catch{setTimeout(()=>_sr(SR),1000)}
+}
+function pauseRec(){recPaused=true;rec?.stop();setVSt("speaking")}
+function resumeRec(){recPaused=false;const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(SR&&recRunning)_sr(SR)}
+function stopRec(){recRunning=false;recPaused=false;rec?.stop();setVSt("off")}
+function speakReply(text){pauseRec();speak(text,()=>resumeRec())}
+
+// ── EMOTION DETECTION ──
+function analyzeEmotion(text){
+  const t=text.toLowerCase();
+  let e="neutral";
+  if(/sad|cry|upset|depressed|hopeless|alone|miss|hurt|broken|tired|exhausted|crying/.test(t))e="sad";
+  else if(/angry|furious|mad|hate|frustrated|damn|annoying/.test(t))e="angry";
+  else if(/stressed|worried|anxious|nervous|scared|panic|overwhelmed/.test(t))e="stressed";
+  else if(/happy|great|amazing|excited|wonderful|fantastic|perfect|love/.test(t))e="happy";
+  S.emotion={current:e,updated:new Date().toLocaleTimeString()};
+  const bar=$("ebar");
+  const colors={neutral:"linear-gradient(90deg,#00ff88,#00aaff)",sad:"linear-gradient(90deg,#0044aa,#0088ff)",angry:"linear-gradient(90deg,#ff2200,#ff6600)",stressed:"linear-gradient(90deg,#ff6600,#ffcc00)",happy:"linear-gradient(90deg,#00ff88,#ffcc00)"};
+  if(bar){bar.style.background=colors[e]||colors.neutral;bar.classList.add("on")}
+  $("emotion-disp").innerHTML=`Detected: <span style="color:var(--g)">${e}</span> · ${S.emotion.updated}`;
+}
+
+// ── BUSY MODE ──
+function toggleBusy(){
+  S.busyMode=!S.busyMode;sv("j-busymode",S.busyMode);
+  $("busy-badge").style.display=S.busyMode?"block":"none";
+  S.busyMode?$("busy-bar").classList.add("on"):$("busy-bar").classList.remove("on");
+  $("busy-toggle").textContent=S.busyMode?"⚡ Deactivate Busy Mode":"⚡ Activate Busy Mode";
+  $("busy-btn").style.borderColor=S.busyMode?"var(--y)":"";
+  $("busy-btn").style.background=S.busyMode?"#0a0800":"";
+  const msg=S.busyMode?"Busy mode activated, Boss. I'm monitoring your accounts and will queue any messages for your review.":"Busy mode deactivated, Boss. Back to normal.";
+  addMsg("assistant",msg);speakReply(msg);renderBusy();
+}
+function renderBusy(){
+  $("busy-toggle").textContent=S.busyMode?"⚡ Deactivate Busy Mode":"⚡ Activate Busy Mode";
+  const msgs=$("busy-msgs");
+  const active=S.busyQueue.filter(m=>!m.replied);
+  if(!active.length){msgs.innerHTML='<div style="text-align:center;color:#0a1a0a;font-size:10px;margin-top:20px;line-height:2">No queued messages.<br>Activate busy mode to start monitoring.</div>';return}
+  msgs.innerHTML=active.map(m=>`<div class="bmsg"><div class="bmsg-from">${m.platform.toUpperCase()} · ${m.from} · ${m.time}</div><div class="bmsg-txt">${m.content}</div><div class="bmsg-btns"><button class="bmsg-btn" onclick="replyBusy('${m.id}')">Draft Reply</button><button class="bmsg-btn" onclick="dismissBusy('${m.id}')">Dismiss</button></div></div>`).join("");
+}
+function replyBusy(id){const m=S.busyQueue.find(x=>x.id===id);if(!m)return;showPanel("chat");processMessage(`Draft a reply to this ${m.platform} message from ${m.from}: "${m.content}"`,null)}
+function dismissBusy(id){S.busyQueue=S.busyQueue.filter(m=>m.id!==id);sv("j-busy",S.busyQueue);renderBusy()}
+
+// ── SOCIAL ──
+const SOCS=[
+  {id:"github",name:"GitHub",color:"#fff",bg:"#161b22",icon:"🐙",desc:"Repositories, Issues, Pull Requests, Code"},
+  {id:"instagram",name:"Instagram",color:"#E1306C",bg:"#1a0510",icon:"📸",desc:"Posts, Stories, Reels, Direct Messages"},
+  {id:"facebook",name:"Facebook",color:"#1877F2",bg:"#051029",icon:"📘",desc:"Pages, Posts, Comments, Messages"},
+  {id:"twitter",name:"Twitter / X",color:"#1DA1F2",bg:"#0a1929",icon:"🐦",desc:"Tweets, Replies, DMs, Analytics"},
+  {id:"youtube",name:"YouTube",color:"#FF0000",bg:"#1a0505",icon:"▶️",desc:"Videos, Comments, Analytics, Uploads"},
+];
+const SOC_SETUP={
+  github:"1. Go to github.com/settings/tokens\n2. Generate new token (classic)\n3. Select scopes: repo, user\n4. Copy and paste below",
+  instagram:"1. Go to developers.facebook.com\n2. Create an app → Instagram Basic Display\n3. Get User Access Token\n4. Paste below",
+  facebook:"1. Go to developers.facebook.com\n2. Create app → Pages API\n3. Generate Page Access Token\n4. Paste below",
+  twitter:"1. Go to developer.twitter.com\n2. Create project & app\n3. Get Bearer Token from Keys tab\n4. Paste below",
+  youtube:"1. Go to console.cloud.google.com\n2. Enable YouTube Data API v3\n3. Create API Key credentials\n4. Paste below",
+};
+
+function renderSocials(){
+  $("social-list").innerHTML=SOCS.map(s=>{
+    const soc=S.socials[s.id];
+    return`<div class="soccard">
+      <div class="sochead">
+        <div class="socname" style="color:${s.color}">${s.icon} ${s.name}</div>
+        <div class="socst ${soc.connected?"sc":"sd"}">${soc.connected?"CONNECTED":"DISCONNECTED"}</div>
+      </div>
+      <div class="soc-desc">${s.desc}</div>
+      ${!soc.connected?`
+        <button class="oauth-btn" style="background:${s.bg};color:${s.color};border:1px solid ${s.color}44" onclick="showSetup('${s.id}')">
+          How to connect ${s.name}
+        </button>
+        <div class="tok-row">
+          <input class="tok-inp" id="tok-${s.id}" type="password" placeholder="Paste your token / API key here..."/>
+          <button class="tok-save" onclick="tokConnect('${s.id}')">Save</button>
+        </div>
+      `:`
+        <div style="font-size:9px;color:var(--dim);margin-bottom:8px">${soc.username?"Connected as: @"+soc.username:"Token active"} — JARVIS managing on command only.</div>
+        <button class="soc-act" style="background:${s.bg};border:1px solid ${s.color}44;color:${s.color}" onclick="testSoc('${s.id}')">✓ Test Connection</button>
+        <button class="soc-disc" onclick="discSoc('${s.id}')">Disconnect ${s.name}</button>
+      `}
+    </div>`;
+  }).join("");
+}
+
+function showSetup(id){
+  const instructions=SOC_SETUP[id]||"Check the platform's developer docs.";
+  addMsg("assistant",`To connect ${SOCS.find(s=>s.id===id)?.name}, Boss:\n\n${instructions}`);
+  speakReply(`I've posted the connection instructions in chat, Boss.`);
+  showPanel("chat");
+}
+function tokConnect(id){
+  const inp=$(`tok-${id}`);const token=inp?.value.trim();
+  if(!token){alert("Paste your token first, Boss.");return}
+  S.socials[id]={connected:true,token,username:""};sv("j-socials",S.socials);
+  renderSocials();
+  const name=SOCS.find(s=>s.id===id)?.name;
+  addMsg("assistant",`${name} connected, Boss. I have access and will manage it strictly on your command.`);
+  speakReply(`${name} is now connected, Boss.`);
+  showPanel("chat");
+}
+function discSoc(id){S.socials[id]={connected:false,token:"",username:""};sv("j-socials",S.socials);renderSocials()}
+function testSoc(id){const name=SOCS.find(s=>s.id===id)?.name;addMsg("assistant",`${name} connection is active and ready, Boss.`);speakReply(`${name} is ready, Boss.`);showPanel("chat")}
+
+// ── MESSAGE PROCESSING ──
+async function processMessage(text,image){
+  if(!text?.trim()||S.loading)return;
+  $("minput").value="";S.loading=true;$("sbtn").disabled=true;
+  try{
+    if(S.creation)await doCreation(text);
+    else if(S.activeAgent)await doAgent(text,S.activeAgent,image||S.imgB64);
+    else{await doJarvis(text,image||S.imgB64);S.imgB64=null;updImgBar()}
+  }catch(e){console.error(e)}
+  S.loading=false;$("sbtn").disabled=false;saveAll();
+}
+
+async function doJarvis(text,imgB64){
+  let ft=text;
+  const urlM=text.match(/https?:\/\/[^\s]+/);
+  if(urlM)ft=`${text}\n\n[PAGE CONTENT]:\n${await fetchURL(urlM[0])}`;
+  const mapM=text.match(/(?:map of|show.*map|where is|location of|directions? to|navigate to)\s+(.+)/i);
+  if(mapM)showMap(mapM[1].trim());
+  if(/i'?m busy|busy mode on|activate busy|going busy/i.test(text)&&!S.busyMode)toggleBusy();
+  if(/busy mode off|not busy|i'?m free|i'?m back/i.test(text)&&S.busyMode)toggleBusy();
+  addMsg("user",text,!!imgB64);showThink();
+  try{
+    const apiMsgs=S.msgs.map(m=>({role:m.role,content:m.content}));
+    apiMsgs[apiMsgs.length-1].content=ft;
+    const reply=await callClaude(apiMsgs,JP(),imgB64);
+    if(reply.includes("[AGENT_DEPLOY]")){await doDeploy();return}
+    const swM=reply.match(/\[SWITCH:(.+?)\]/);
+    if(swM){const found=S.agents.find(a=>a.name.toLowerCase()===swM[1].toLowerCase().trim());if(found){S.activeAgent=found;updHeader();const clean=reply.replace(/\[SWITCH:.+?\]/,"").trim()||`Switching you to ${found.name}, Boss.`;addMsg("assistant",clean);speakReply(clean);renderAgents();return}}
+    if(/(?:create|need|make|new)\s+(?:an?\s+)?agent/i.test(text)){S.creation={step:"name",name:"",role:"",knowledge:""};sv("j-creation",S.creation)}
+    addMsg("assistant",reply);speakReply(reply);updSys();
+  }catch(e){hideThink();addMsg("assistant",`⚠️ ${e.message}`)}
+}
+
+async function doAgent(text,agent,imgB64){
+  const id=agent.id;if(!S.agMsgs[id])S.agMsgs[id]=[];
+  S.agMsgs[id].push({role:"user",content:text});
+  renderAgChat();showThink();
+  try{
+    const reply=await callClaude(S.agMsgs[id],AP(agent),imgB64);
+    S.agMsgs[id].push({role:"assistant",content:reply});sv("j-agmsgs",S.agMsgs);renderAgChat();speakReply(reply);
+  }catch(e){hideThink();S.agMsgs[id].push({role:"assistant",content:`⚠️ ${e.message}`});renderAgChat()}
+}
+
+async function doCreation(text){
+  const cr=S.creation;let reply="";
+  if(cr.step==="name"){cr.name=text;cr.step="role";reply=`Good. What role will ${text} serve, Boss?`}
+  else if(cr.step==="role"){cr.role=text;cr.step="knowledge";reply=`Understood. What knowledge and skills should ${cr.name} have?`}
+  else if(cr.step==="knowledge"){cr.knowledge=text;cr.step="confirm";reply=`Agent profile ready, Boss:\n\n▸ Name: ${cr.name}\n▸ Role: ${cr.role}\n▸ Skills: ${text}\n\nType DEPLOY to activate.`}
+  else if(cr.step==="confirm"){if(/deploy/i.test(text)){await doDeploy();return}reply=`Type DEPLOY when ready, Boss.`}
+  sv("j-creation",cr);addMsg("user",text);addMsg("assistant",reply);speakReply(reply);
+}
+
+async function doDeploy(){
+  const cr=S.creation;if(!cr?.name)return;
+  const agent={id:Date.now().toString(),name:cr.name,role:cr.role,knowledge:cr.knowledge,created:new Date().toISOString()};
+  S.agents.push(agent);S.creation=null;sv("j-agents",S.agents);localStorage.removeItem("j-creation");
+  const reply=`${agent.name} is now operational, Boss. Standing by for your command. Say "talk to ${agent.name}" to connect.`;
+  addMsg("user","DEPLOY");addMsg("assistant",reply);speakReply(reply);renderAgents();updSys();
+}
+
+// ── RENDER ──
+let thinkEl=null;
+function $(id){return document.getElementById(id)}
+function addMsg(role,content,type=""){
+  hideThink();S.msgs.push({role,content});sv("j-msgs",S.msgs);
+  const c=$("chat-msgs"),e=$("est");if(e)e.remove();
+  const w=document.createElement("div");w.className=`mw ${role}`;
+  const t=document.createElement("div");t.className="rtag";
+  t.textContent=role==="user"?"BOSS":(S.activeAgent?S.activeAgent.name:"J.A.R.V.I.S");
+  const b=document.createElement("div");
+  b.className=`bubble ${role}${S.activeAgent&&role==="assistant"?" agnt":""}${type==="sys"?" sys":""}`;
+  b.textContent=content;w.appendChild(t);w.appendChild(b);c.appendChild(w);c.scrollTop=c.scrollHeight;
+}
+function renderAgChat(){
+  hideThink();const ag=S.activeAgent;if(!ag)return;
+  const msgs=S.agMsgs[ag.id]||[];const c=$("chat-msgs");c.innerHTML="";
+  msgs.forEach(m=>{const w=document.createElement("div");w.className=`mw ${m.role}`;const t=document.createElement("div");t.className="rtag";t.textContent=m.role==="user"?"BOSS":ag.name;const b=document.createElement("div");b.className=`bubble ${m.role}${m.role==="assistant"?" agnt":""}`;b.textContent=m.content;w.appendChild(t);w.appendChild(b);c.appendChild(w)});
+  c.scrollTop=c.scrollHeight;
+}
+function showThink(){const c=$("chat-msgs"),e=$("est");if(e)e.remove();thinkEl=document.createElement("div");thinkEl.className="tbox";thinkEl.innerHTML='<div class="td"></div><div class="td"></div><div class="td"></div>';c.appendChild(thinkEl);c.scrollTop=c.scrollHeight}
+function hideThink(){thinkEl?.remove();thinkEl=null}
+
+function renderAgents(){
+  const list=$("agents-list");
+  if(!S.agents.length){list.innerHTML='<div style="text-align:center;color:#0a1a0a;font-size:11px;margin-top:30px;line-height:2">No agents deployed yet, Boss.<br>Ask JARVIS to create one.</div>';return}
+  list.innerHTML=S.agents.map(a=>`<div class="agcard${S.activeAgent?.id===a.id?" on":""}"><div class="agname">${a.name}</div><div class="agrole">${a.role}</div><div class="agknow">${a.knowledge}</div><div class="agbtns"><button class="tbtn${S.activeAgent?.id===a.id?" on":""}" onclick="swAg('${a.id}')">${S.activeAgent?.id===a.id?"✓ Active":"Talk to Agent"}</button><button class="dbtn" onclick="delAg('${a.id}')">🗑</button></div></div>`).join("");
+}
+function swAg(id){const ag=S.agents.find(a=>a.id===id);if(!ag)return;S.activeAgent=ag;updHeader();renderAgChat();renderAgents();showPanel("chat")}
+function delAg(id){S.agents=S.agents.filter(a=>a.id!==id);if(S.activeAgent?.id===id){S.activeAgent=null;updHeader()}sv("j-agents",S.agents);renderAgents()}
+
+// ── CAMERA ──
+let camStream=null;
+$("start-cam").onclick=async()=>{try{camStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:"environment"},audio:false});const vid=$("cam-vid");vid.srcObject=camStream;vid.style.display="block";$("live-lbl").style.display="block";$("cam-ctrl").style.display="flex";$("start-cam").style.display="none"}catch{alert("Camera permission denied.")}};
+$("cap-btn").onclick=()=>{const vid=$("cam-vid"),c=$("cam-canvas");c.width=vid.videoWidth;c.height=vid.videoHeight;c.getContext("2d").drawImage(vid,0,0);const b64=c.toDataURL("image/jpeg",.8).split(",")[1];S.imgB64=b64;const p=$("cam-img-prev");p.src=`data:image/jpeg;base64,${b64}`;p.style.display="block";$("cam-ar").style.display="block";updImgBar();stopCam()};
+$("stop-cam").onclick=stopCam;
+function stopCam(){camStream?.getTracks().forEach(t=>t.stop());camStream=null;$("cam-vid").style.display="none";$("cam-vid").srcObject=null;$("live-lbl").style.display="none";$("cam-ctrl").style.display="none";$("start-cam").style.display="block"}
+$("cam-upload").onchange=(e)=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{const b64=ev.target.result.split(",")[1];S.imgB64=b64;const p=$("cam-img-prev");p.src=`data:image/jpeg;base64,${b64}`;p.style.display="block";$("cam-ar").style.display="block";updImgBar()};r.readAsDataURL(f)};
+$("analyze-btn").onclick=()=>{$("minput").value="Analyze everything in this image in full detail.";showPanel("chat");sendManual()};
+
+// ── UTILS ──
+function updImgBar(){const bar=$("img-bar"),p=$("img-prev");if(S.imgB64){p.src=`data:image/jpeg;base64,${S.imgB64}`;bar.classList.add("on")}else bar.classList.remove("on")}
+$("img-clr").onclick=()=>{S.imgB64=null;updImgBar()};
+$("file-in").onchange=(e)=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{S.imgB64=ev.target.result.split(",")[1];updImgBar();$("minput").value="Analyze this image in full detail."};r.readAsDataURL(f)};
+
+function showMap(q){S.mapQuery=q;$("map-iframe").src=`https://www.google.com/maps/embed/v1/place?key=AIzaSyD-9tSrke72PouQMnMX-a7eZSW0jkFMBWY&q=${encodeURIComponent(q)}`;$("map-iframe").style.display="block";$("map-empty").style.display="none";$("clr-map").style.display="block";$("map-lbl").textContent=`◎ ${q}`}
+$("clr-map").onclick=()=>{S.mapQuery=null;$("map-iframe").style.display="none";$("map-empty").style.display="flex";$("clr-map").style.display="none";$("map-lbl").textContent=""};
+
+function updSys(){
+  $("sys-rows").innerHTML=[["Version",S.meta.version],["Voice",S.voiceState],["Busy Mode",S.busyMode?"ACTIVE":"OFF"],["Active Agent",S.activeAgent?.name||"None"],["Agents Deployed",S.agents.length],["Messages",S.msgs.length],["Queued",S.busyQueue.filter(m=>!m.replied).length],["Connected",Object.entries(S.socials).filter(([,v])=>v.connected).map(([k])=>k).join(", ")||"None"],["Emotion",S.emotion.current]].map(([k,v])=>`<div class="srow"><span class="sk">${k}</span><span class="sv">${v}</span></div>`).join("");
+  $("src-box").textContent=JSON.stringify(S.meta,null,2);
+}
+
+$("clr-btn").onclick=()=>{if(confirm("Clear all memory and agents, Boss?"))clearAll()};
+function clearAll(){["j-msgs","j-agmsgs","j-meta","j-agents","j-creation","j-socials","j-busy","j-busymode"].forEach(k=>localStorage.removeItem(k));location.reload()}
+
+function updHeader(){
+  const ag=S.activeAgent;
+  $("logo").textContent=ag?ag.name:"J.A.R.V.I.S";
+  $("sublogo").textContent=ag?ag.role:"Just A Rather Very Intelligent System";
+  $("back-btn").style.display=ag?"block":"none";
+}
+$("back-btn").onclick=()=>{S.activeAgent=null;updHeader();const c=$("chat-msgs");c.innerHTML="";S.msgs.forEach(m=>addMsg(m.role,m.content));renderAgents()};
+
+function showPanel(id){
+  document.querySelectorAll(".panel").forEach(p=>p.classList.remove("on"));
+  document.querySelectorAll(".nb").forEach(b=>b.classList.remove("on"));
+  $(id)?.classList.add("on");
+  document.querySelector(`.nb[data-p="${id}"]`)?.classList.add("on");
+  if(id==="sys")updSys();if(id==="social")renderSocials();
+  if(id==="agents")renderAgents();if(id==="busy")renderBusy();
+}
+document.querySelectorAll(".nb").forEach(btn=>btn.onclick=()=>showPanel(btn.dataset.p));
+$("cam-sc").onclick=()=>showPanel("camera");
+$("busy-btn").onclick=toggleBusy;
+$("busy-toggle").onclick=toggleBusy;
+
+function sendManual(){const t=$("minput").value.trim();if(!t||S.loading)return;processMessage(t,null)}
+$("sbtn").onclick=sendManual;
+$("minput").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendManual()}});
+$("minput").addEventListener("input",function(){this.style.height="auto";this.style.height=Math.min(this.scrollHeight,96)+"px"});
+$("vbtn").onclick=()=>{if(S.voiceState==="off"){S.voiceEnabled=true;startRec()}else{S.voiceEnabled=false;stopRec();stopSpeak()}};
+
+// ── PWA ──
+if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("/sw.js").catch(()=>{}));
+
+// ── BOOT ──
+function boot(){
+  initVoice();loadAll();
+  const c=$("chat-msgs");
+  if(S.msgs.length>0){c.innerHTML="";S.msgs.forEach(m=>addMsg(m.role,m.content))}
+  renderAgents();renderSocials();renderBusy();updSys();updHeader();
+  if(S.busyMode){$("busy-badge").style.display="block";$("busy-bar").classList.add("on")}
+  setTimeout(()=>{
+    startRec();
+    if(S.msgs.length===0){
+      const g="Good day, Boss. J.A.R.V.I.S online. All systems nominal. How may I assist you today?";
+      addMsg("assistant",g);speakReply(g);
+    }
+  },800);
+}
+boot();
+</script>
+</body>
+</html>
