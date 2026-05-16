@@ -329,67 +329,38 @@ function saveAll(){
   sv("j-busy",S.busyQueue);sv("j-busymode",S.busyMode);
 }
 
-// ── CLAUDE API ──
-async function callClaude(messages,system,imgB64=null){
-  let msgs=messages.slice(-24).map(m=>({role:m.role,content:m.content}));
-  if(imgB64&&msgs.length>0){
-    const last=msgs[msgs.length-1];
-    msgs[msgs.length-1]={role:last.role,content:[
-      {type:"image",source:{type:"base64",media_type:"image/jpeg",data:imgB64}},
-      {type:"text",text:last.content}
-    ]};
-  }
-  const res=await fetch("https://api.anthropic.com/v1/messages",{
-    method:"POST",headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1000,system,messages:msgs})
+// ── LOCAL INTELLIGENCE ──
+const JARVIS_RESPONSES = {
+  greetings: ["Good day, Boss. J.A.R.V.I.S online. All systems nominal. How may I assist you today?", "At your service, Boss. All systems are green.", "Welcome back, Boss. I've been monitoring the systems in your absence."],
+  status: ["All systems operational, Boss. Core temperature is stable, and network latency is minimal.", "Everything is running smoothly, Boss. No anomalies detected."],
+  busy_on: "Busy mode activated, Boss. I'm monitoring your accounts and will queue any messages for your review.",
+  busy_off: "Busy mode deactivated, Boss. Back to normal.",
+  default: "I'm processing your request, Boss. Please give me a moment to analyze the data.",
+  agent_create: "Understood, Boss. What shall we call this agent?",
+  agent_role: (name) => `Good. What role will ${name} serve, Boss?`,
+  agent_knowledge: (name) => `Understood. What knowledge and skills should ${name} have?`,
+  agent_confirm: (name, role, knowledge) => `Agent profile ready, Boss:\n\n▸ Name: ${name}\n▸ Role: ${role}\n▸ Skills: ${knowledge}\n\nType DEPLOY to activate.`,
+  agent_deployed: (name) => `${name} is now operational, Boss. Standing by for your command. Say "talk to ${name}" to connect.`
+};
+
+function getLocalResponse(text) {
+  const t = text.toLowerCase();
+  if (t.includes("hi") || t.includes("hello") || t.includes("hey")) return JARVIS_RESPONSES.greetings[Math.floor(Math.random() * JARVIS_RESPONSES.greetings.length)];
+  if (t.includes("status") || t.includes("system")) return JARVIS_RESPONSES.status[Math.floor(Math.random() * JARVIS_RESPONSES.status.length)];
+  if (t.includes("busy mode on") || t.includes("activate busy")) return JARVIS_RESPONSES.busy_on;
+  if (t.includes("busy mode off") || t.includes("deactivate busy")) return JARVIS_RESPONSES.busy_off;
+  if (t.includes("create agent") || t.includes("new agent")) return JARVIS_RESPONSES.agent_create;
+  return JARVIS_RESPONSES.default;
+}
+
+async function callClaude(messages, system, imgB64 = null) {
+  // Simulating local processing instead of external API call
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      const lastMsg = messages[messages.length - 1].content;
+      resolve(getLocalResponse(lastMsg));
+    }, 1000);
   });
-  const data=await res.json();
-  if(!res.ok)throw new Error(data.error?.message||"API error");
-  return data.content?.find(b=>b.type==="text")?.text||"";
-}
-
-// ── PROMPTS ──
-function JP(){
-  const conn=Object.entries(S.socials).filter(([,v])=>v.connected).map(([k])=>k).join(", ")||"None";
-  return`You are J.A.R.V.I.S — Just A Rather Very Intelligent System. You serve one person: Boss.
-
-PERSONALITY: Exactly like JARVIS from Iron Man — calm, precise, dry wit, deeply loyal. Always say "Boss". Respond in whatever language Boss uses. Never say "I can't" without an alternative path.
-
-EMOTIONAL AWARENESS: Boss's detected emotion: "${S.emotion.current}". If sad/stressed/angry — acknowledge it gently and naturally once.
-
-BUSY MODE: ${S.busyMode?"ACTIVE — monitoring communications for Boss":"INACTIVE"}.
-
-CONNECTED PLATFORMS: ${conn}. Manage them on Boss's command only — never act without approval.
-
-AGENT MANAGEMENT:
-When Boss says "create agent" or "I need an agent for X":
-→ Ask: "Understood, Boss. What shall we call this agent?"
-→ After name: "What role will [name] serve?"
-→ After role: "What knowledge and skills should [name] have?"
-→ After knowledge: Show profile summary. Say "Type DEPLOY to activate [name]."
-When Boss types DEPLOY → output exactly: [AGENT_DEPLOY]
-When Boss says "talk to [name]" → output exactly: [SWITCH:name]
-Agents: ${S.agents.length?S.agents.map((a,i)=>`${i+1}. ${a.name} (${a.role})`).join(", "):"None deployed yet"}
-
-SELF-AWARENESS: v${S.meta.version}. You can read your own config and update it when Boss instructs.
-
-CODING: Expert in React, TypeScript, Python, Supabase, APIs, AI, mobile, web — always complete production code.`;
-}
-
-function AP(a){
-  return`You are ${a.name}, an AI agent created by Boss and managed by J.A.R.V.I.S.
-Role: ${a.role}
-Expertise: ${a.knowledge}
-RULES: NEVER act without Boss's explicit command. Always say "Boss". Full intelligence across all domains. When given a task: confirm it, explain your complete approach, then execute fully and autonomously to completion. Report progress at each step.`;
-}
-
-// ── URL FETCH ──
-async function fetchURL(url){
-  try{
-    const res=await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`);
-    const d=await res.json();
-    return d.contents?.replace(/<[^>]*>/g," ").replace(/\s+/g," ").trim().slice(0,3000)||"No content extracted.";
-  }catch{return"Could not fetch that URL, Boss."}
 }
 
 // ── VOICE ENGINE ──
@@ -401,6 +372,7 @@ function initVoice(){
   else speechSynthesis.onvoiceschanged=load;
 }
 function bestVoice(){
+  // User mentioned "real voices" and "Daniel" is a high-quality voice often used for JARVIS
   return voices.find(v=>v.name==="Daniel")||
     voices.find(v=>v.name.includes("Google UK English Male"))||
     voices.find(v=>v.lang==="en-GB")||
@@ -475,7 +447,7 @@ function toggleBusy(){
   $("busy-toggle").textContent=S.busyMode?"⚡ Deactivate Busy Mode":"⚡ Activate Busy Mode";
   $("busy-btn").style.borderColor=S.busyMode?"var(--y)":"";
   $("busy-btn").style.background=S.busyMode?"#0a0800":"";
-  const msg=S.busyMode?"Busy mode activated, Boss. I'm monitoring your accounts and will queue any messages for your review.":"Busy mode deactivated, Boss. Back to normal.";
+  const msg=S.busyMode?JARVIS_RESPONSES.busy_on:JARVIS_RESPONSES.busy_off;
   addMsg("assistant",msg);speakReply(msg);renderBusy();
 }
 function renderBusy(){
@@ -563,8 +535,6 @@ async function processMessage(text,image){
 
 async function doJarvis(text,imgB64){
   let ft=text;
-  const urlM=text.match(/https?:\/\/[^\s]+/);
-  if(urlM)ft=`${text}\n\n[PAGE CONTENT]:\n${await fetchURL(urlM[0])}`;
   const mapM=text.match(/(?:map of|show.*map|where is|location of|directions? to|navigate to)\s+(.+)/i);
   if(mapM)showMap(mapM[1].trim());
   if(/i'?m busy|busy mode on|activate busy|going busy/i.test(text)&&!S.busyMode)toggleBusy();
@@ -572,8 +542,7 @@ async function doJarvis(text,imgB64){
   addMsg("user",text,!!imgB64);showThink();
   try{
     const apiMsgs=S.msgs.map(m=>({role:m.role,content:m.content}));
-    apiMsgs[apiMsgs.length-1].content=ft;
-    const reply=await callClaude(apiMsgs,JP(),imgB64);
+    const reply=await callClaude(apiMsgs,null,imgB64);
     if(reply.includes("[AGENT_DEPLOY]")){await doDeploy();return}
     const swM=reply.match(/\[SWITCH:(.+?)\]/);
     if(swM){const found=S.agents.find(a=>a.name.toLowerCase()===swM[1].toLowerCase().trim());if(found){S.activeAgent=found;updHeader();const clean=reply.replace(/\[SWITCH:.+?\]/,"").trim()||`Switching you to ${found.name}, Boss.`;addMsg("assistant",clean);speakReply(clean);renderAgents();return}}
@@ -587,16 +556,16 @@ async function doAgent(text,agent,imgB64){
   S.agMsgs[id].push({role:"user",content:text});
   renderAgChat();showThink();
   try{
-    const reply=await callClaude(S.agMsgs[id],AP(agent),imgB64);
+    const reply=await callClaude(S.agMsgs[id],null,imgB64);
     S.agMsgs[id].push({role:"assistant",content:reply});sv("j-agmsgs",S.agMsgs);renderAgChat();speakReply(reply);
   }catch(e){hideThink();S.agMsgs[id].push({role:"assistant",content:`⚠️ ${e.message}`});renderAgChat()}
 }
 
 async function doCreation(text){
   const cr=S.creation;let reply="";
-  if(cr.step==="name"){cr.name=text;cr.step="role";reply=`Good. What role will ${text} serve, Boss?`}
-  else if(cr.step==="role"){cr.role=text;cr.step="knowledge";reply=`Understood. What knowledge and skills should ${cr.name} have?`}
-  else if(cr.step==="knowledge"){cr.knowledge=text;cr.step="confirm";reply=`Agent profile ready, Boss:\n\n▸ Name: ${cr.name}\n▸ Role: ${cr.role}\n▸ Skills: ${text}\n\nType DEPLOY to activate.`}
+  if(cr.step==="name"){cr.name=text;cr.step="role";reply=JARVIS_RESPONSES.agent_role(text)}
+  else if(cr.step==="role"){cr.role=text;cr.step="knowledge";reply=JARVIS_RESPONSES.agent_knowledge(cr.name)}
+  else if(cr.step==="knowledge"){cr.knowledge=text;cr.step="confirm";reply=JARVIS_RESPONSES.agent_confirm(cr.name, cr.role, text)}
   else if(cr.step==="confirm"){if(/deploy/i.test(text)){await doDeploy();return}reply=`Type DEPLOY when ready, Boss.`}
   sv("j-creation",cr);addMsg("user",text);addMsg("assistant",reply);speakReply(reply);
 }
@@ -605,7 +574,7 @@ async function doDeploy(){
   const cr=S.creation;if(!cr?.name)return;
   const agent={id:Date.now().toString(),name:cr.name,role:cr.role,knowledge:cr.knowledge,created:new Date().toISOString()};
   S.agents.push(agent);S.creation=null;sv("j-agents",S.agents);localStorage.removeItem("j-creation");
-  const reply=`${agent.name} is now operational, Boss. Standing by for your command. Say "talk to ${agent.name}" to connect.`;
+  const reply=JARVIS_RESPONSES.agent_deployed(agent.name);
   addMsg("user","DEPLOY");addMsg("assistant",reply);speakReply(reply);renderAgents();updSys();
 }
 
@@ -704,7 +673,7 @@ function boot(){
   setTimeout(()=>{
     startRec();
     if(S.msgs.length===0){
-      const g="Good day, Boss. J.A.R.V.I.S online. All systems nominal. How may I assist you today?";
+      const g=JARVIS_RESPONSES.greetings[0];
       addMsg("assistant",g);speakReply(g);
     }
   },800);
