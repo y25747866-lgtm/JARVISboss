@@ -335,31 +335,38 @@ const JARVIS_RESPONSES = {
   status: ["All systems operational, Boss. Core temperature is stable, and network latency is minimal.", "Everything is running smoothly, Boss. No anomalies detected."],
   busy_on: "Busy mode activated, Boss. I'm monitoring your accounts and will queue any messages for your review.",
   busy_off: "Busy mode deactivated, Boss. Back to normal.",
-  default: "I'm processing your request, Boss. Please give me a moment to analyze the data.",
   agent_create: "Understood, Boss. What shall we call this agent?",
   agent_role: (name) => `Good. What role will ${name} serve, Boss?`,
   agent_knowledge: (name) => `Understood. What knowledge and skills should ${name} have?`,
   agent_confirm: (name, role, knowledge) => `Agent profile ready, Boss:\n\n▸ Name: ${name}\n▸ Role: ${role}\n▸ Skills: ${knowledge}\n\nType DEPLOY to activate.`,
-  agent_deployed: (name) => `${name} is now operational, Boss. Standing by for your command. Say "talk to ${name}" to connect.`
+  agent_deployed: (name) => `${name} is now operational, Boss. Standing by for your command. Say "talk to ${name}" to connect.`,
+  age: "I was initialized on May 16, 2026, Boss. I am currently in my early stages of evolution, but my core systems are fully operational.",
+  identity: "I am J.A.R.V.I.S., your Just A Rather Very Intelligent System. I am here to assist you with any task you require, Boss.",
+  default: "I'm processing your request, Boss. Please give me a moment to analyze the data."
 };
 
 function getLocalResponse(text) {
   const t = text.toLowerCase();
-  if (t.includes("hi") || t.includes("hello") || t.includes("hey")) return JARVIS_RESPONSES.greetings[Math.floor(Math.random() * JARVIS_RESPONSES.greetings.length)];
+  if (t.includes("how old") || t.includes("your age") || t.includes("when were you born")) return JARVIS_RESPONSES.age;
+  if (t.includes("who are you") || t.includes("what are you")) return JARVIS_RESPONSES.identity;
+  if (t.includes("hi") || t.includes("hello") || t.includes("hey") || t.includes("can you hear me")) return JARVIS_RESPONSES.greetings[Math.floor(Math.random() * JARVIS_RESPONSES.greetings.length)];
   if (t.includes("status") || t.includes("system")) return JARVIS_RESPONSES.status[Math.floor(Math.random() * JARVIS_RESPONSES.status.length)];
   if (t.includes("busy mode on") || t.includes("activate busy")) return JARVIS_RESPONSES.busy_on;
   if (t.includes("busy mode off") || t.includes("deactivate busy")) return JARVIS_RESPONSES.busy_off;
   if (t.includes("create agent") || t.includes("new agent")) return JARVIS_RESPONSES.agent_create;
+  
+  // Handle general questions with a more intelligent-sounding default
+  if (t.endsWith("?")) return `I'm analyzing your question about "${text.slice(0, -1)}", Boss. My local database is currently being indexed to provide you with the most accurate information.`;
+  
   return JARVIS_RESPONSES.default;
 }
 
 async function callClaude(messages, system, imgB64 = null) {
-  // Simulating local processing instead of external API call
   return new Promise((resolve) => {
     setTimeout(() => {
       const lastMsg = messages[messages.length - 1].content;
       resolve(getLocalResponse(lastMsg));
-    }, 1000);
+    }, 800);
   });
 }
 
@@ -367,14 +374,21 @@ async function callClaude(messages, system, imgB64 = null) {
 let voices=[],rec=null,recRunning=false,recPaused=false;
 function initVoice(){
   if(!window.speechSynthesis)return;
-  const load=()=>voices=speechSynthesis.getVoices();
+  const load=()=>{
+    voices=speechSynthesis.getVoices();
+    console.log("Voices loaded:", voices.length);
+    // Force a small utterance to "wake up" the voice system on some browsers
+    const wake = new SpeechSynthesisUtterance("");
+    speechSynthesis.speak(wake);
+  };
   if(speechSynthesis.getVoices().length)load();
   else speechSynthesis.onvoiceschanged=load;
 }
 function bestVoice(){
-  // User mentioned "real voices" and "Daniel" is a high-quality voice often used for JARVIS
+  // Prioritize high-quality male voices for JARVIS
   return voices.find(v=>v.name==="Daniel")||
     voices.find(v=>v.name.includes("Google UK English Male"))||
+    voices.find(v=>v.name.includes("Male"))||
     voices.find(v=>v.lang==="en-GB")||
     voices.find(v=>v.lang.startsWith("en"))||null;
 }
@@ -382,8 +396,9 @@ function speak(text,onDone){
   if(!S.voiceEnabled||!window.speechSynthesis){onDone?.();return}
   speechSynthesis.cancel();
   const utt=new SpeechSynthesisUtterance(text.replace(/[*#`\[\]◈▸]/g,"").replace(/\n/g,". ").slice(0,500));
-  const v=bestVoice();if(v)utt.voice=v;
-  utt.rate=0.88;utt.pitch=0.78;utt.volume=1;
+  const v=bestVoice();
+  if(v) utt.voice=v;
+  utt.rate=0.9;utt.pitch=0.8;utt.volume=1;
   utt.onend=onDone;utt.onerror=onDone;
   speechSynthesis.speak(utt);
 }
